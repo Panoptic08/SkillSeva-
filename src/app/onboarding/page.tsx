@@ -95,7 +95,7 @@ export default function OnboardingPage() {
           href="/employee-form"
           className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
-          I'm an Employee
+          I&apos;m an Employee
         </Link>
         <button
           disabled={loading}

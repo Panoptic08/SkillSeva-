@@ -25,7 +25,7 @@ export default function LandingPage() {
 
           {/* Heading */}
           <h1 className="text-2xl font-semibold max-w-[25ch]">
-            Empowering India's Freelancers for a Brighter Future!
+            Empowering India&apos;s Freelancers for a Brighter Future!
           </h1>
 
           {/* Conditional Buttons */}
