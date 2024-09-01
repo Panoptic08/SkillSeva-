@@ -3,10 +3,21 @@
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { buttonVariants } from "@/components/ui/button";
+import Image from "next/image";
 import logo3 from "@/resources/logo3.png";
+import { useEffect, useState } from "react";
 
 export default function LandingPage() {
   const { isLoaded, isSignedIn } = useUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <main className="w-full flex flex-col items-center justify-center bg-[#F2F1E8] scroll-smooth">
@@ -17,10 +28,12 @@ export default function LandingPage() {
       >
         <div className="flex flex-col items-center justify-center gap-4 text-center mt-16">
           {/* Logo Image */}
-          <img
-            src={logo3.src}
+          <Image
+            src={logo3}
             alt="SkillSeva Logo"
-            className="h-[120px] mb-6"
+            width={120}
+            height={120}
+            className="mb-6"
           />
 
           {/* Heading */}
@@ -87,7 +100,7 @@ export default function LandingPage() {
       >
         <h2 className="text-4xl font-bold mb-6 text-gray-800">About Us</h2>
         <p className="text-xl text-gray-700 max-w-[60ch] text-center">
-          Welcome to SkillSeva India’s premier freelancing platform dedicated to
+          Welcome to SkillSeva India&apos;s premier freelancing platform dedicated to
           connecting talented freelancers with businesses and entrepreneurs also
           with the aim to provide small jobs to the ones who have talent and skills
           but not work to do. We are a vibrant community of professionals, from
