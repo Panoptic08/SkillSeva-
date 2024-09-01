@@ -16,15 +16,18 @@ import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "@clerk/nextjs";
-import { Country, State, City } from 'country-state-city';
+import { Country, State, City } from "country-state-city";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CreateJobs() {
   const { getToken, userId } = useAuth();
-  
+  const { toast } = useToast();
+
   // Define state types
   const [selectedCountry, setSelectedCountry] = useState<any>(null);
   const [selectedState, setSelectedState] = useState<any>(null);
   const [selectedCity, setSelectedCity] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   const [countriesList, setCountriesList] = useState<any[]>([]);
   const [stateList, setStateList] = useState<any[]>([]);
@@ -47,13 +50,15 @@ export default function CreateJobs() {
 
   useEffect(() => {
     if (selectedState && selectedCountry) {
-      setCityList(City.getCitiesOfState(selectedCountry.isoCode, selectedState.isoCode));
+      setCityList(
+        City.getCitiesOfState(selectedCountry.isoCode, selectedState.isoCode)
+      );
     } else {
       setCityList([]);
     }
   }, [selectedState, selectedCountry]);
 
-  console.log(selectedCity)
+  console.log(selectedCity);
 
   const [jobDetails, setJobDetails] = useState({
     title: "",
@@ -82,21 +87,35 @@ export default function CreateJobs() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
     const token = await getToken({ template: "supabase" });
-    console.log(token);
 
-    // Submit data via axios
-    const resp = await axios.post(
-      `/api/create-job?userId=${userId}`,
-      jobDetails,
-      {
+    const resp = await axios
+      .post(`/api/create-job?userId=${userId}`, jobDetails, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
-    );
-    console.log(resp);
+      })
+      .then((res) => {
+        console.log(res.status);
+        if (res.status === 200) {
+          toast({ title: res.data.message, variant: "success" });
+        } else {
+          toast({ title: "Something went wrong", variant: "destructive" });
+        }
+      })
+      .catch((err) => {
+        console.log(err.response.data.error);
+        toast({
+          title: "Something went wrong",
+          description: err.response.data.error,
+          variant: "destructive",
+        });
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -106,14 +125,14 @@ export default function CreateJobs() {
     }));
   }, [tags]);
 
-  useEffect(()=>{
+  useEffect(() => {
     setJobDetails((prevDetails) => ({
-        ...prevDetails,
-        location: selectedCity,
-      }));
-  }, [selectedCity])
+      ...prevDetails,
+      location: selectedCity,
+    }));
+  }, [selectedCity]);
 
-  console.log(jobDetails)
+  console.log(jobDetails);
 
   return (
     <div className="max-w-2xl mx-auto p-6">
@@ -134,6 +153,7 @@ export default function CreateJobs() {
           <Textarea
             id="description"
             name="description"
+            placeholder="Between 30 to 250 words"
             value={jobDetails.description}
             onChange={handleInputChange}
             required
@@ -165,14 +185,16 @@ export default function CreateJobs() {
           </span>
           <Input
             type="text"
-            placeholder="Press Enter after typing a tag"
+            placeholder="Press Enter after typing a skill"
             value={currentTag}
             onChange={(e) => setCurrentTag(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 if (currentTag.trim().length > 0) {
-                  setTags((prevTags) => new Set(prevTags).add(currentTag.trim()));
+                  setTags((prevTags) =>
+                    new Set(prevTags).add(currentTag.trim())
+                  );
                   setCurrentTag("");
                 }
               }
@@ -180,7 +202,7 @@ export default function CreateJobs() {
           />
         </div>
         <div>
-          <Label htmlFor="budget">Budget (in ₹)</Label>
+          <Label htmlFor="budget">Salary (in ₹)</Label>
           <Input
             id="budget"
             name="budget"
@@ -194,17 +216,18 @@ export default function CreateJobs() {
           <Label htmlFor="category">Category</Label>
           <Select
             value={jobDetails.category}
-            onValueChange={(value) => handleInputChange({ target: { name: "category", value } } as React.ChangeEvent<HTMLSelectElement>)}
+            onValueChange={(value) =>
+              handleInputChange({
+                target: { name: "category", value },
+              } as React.ChangeEvent<HTMLSelectElement>)
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="web-development">Web Development</SelectItem>
-              <SelectItem value="mobile-development">Mobile Development</SelectItem>
-              <SelectItem value="design">Design</SelectItem>
-              <SelectItem value="writing">Writing</SelectItem>
-              <SelectItem value="marketing">Marketing</SelectItem>
+              <SelectItem value="tech">Tech</SelectItem>
+              <SelectItem value="non-tech">Non Tech</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -212,7 +235,9 @@ export default function CreateJobs() {
           <Label>Job Type</Label>
           <RadioGroup
             value={jobDetails.job_type}
-            onValueChange={(value) => setJobDetails((prev) => ({ ...prev, job_type: value }))}
+            onValueChange={(value) =>
+              setJobDetails((prev) => ({ ...prev, job_type: value }))
+            }
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="individual" id="individual" />
@@ -229,7 +254,8 @@ export default function CreateJobs() {
           <Select
             value={selectedCountry?.isoCode ?? ""}
             onValueChange={(value) => {
-              const country = countriesList.find((c) => c.isoCode === value) || null;
+              const country =
+                countriesList.find((c) => c.isoCode === value) || null;
               setSelectedCountry(country);
             }}
           >
@@ -287,7 +313,10 @@ export default function CreateJobs() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleSubmit}>Create Job</Button>
+        <Button
+        disabled={loading}
+        //@ts-ignore
+         onClick={handleSubmit} className="">{loading ? "Creating..." : "Create Job"}</Button>
       </form>
     </div>
   );
